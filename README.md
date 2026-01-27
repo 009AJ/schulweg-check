@@ -72,5 +72,5 @@ Frei nutzbar für Bildungszwecke.
 
 ---
 
-*Entwickelt für die Jugendpflege Kirkel*
+*Entwickelt von der Jugendpflege Kirkel 2026*
 
