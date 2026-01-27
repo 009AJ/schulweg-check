@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Schulweg-Detektive">
+  <meta name="theme-color" content="#f59e0b">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Schulweg-Detektive</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-text-size-adjust: 100%; }
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      overflow-x: hidden;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      min-height: 100vh;
+      font-size: 16px;
+    }
+    header {
+      background: #f59e0b;
+      color: white;
+      padding: 16px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      width: 100%;
+    }
+    main { 
+      padding: 16px; 
+      max-width: 500px; 
+      width: 100%;
+      margin: 0 auto; 
+    }
+    
+    .big-btn {
+      width: 100%;
+      max-width: 100%;
+      padding: 24px;
+      border: none;
+      border-radius: 16px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      -webkit-tap-highlight-color: transparent;
+      -webkit-appearance: none;
+    }
+    .big-btn:active { transform: scale(0.98); }
+    .btn-danger { background: #fee2e2; color: #dc2626; border: 3px solid #fca5a5; }
+    .btn-good { background: #d1fae5; color: #059669; border: 3px solid #6ee7b7; }
+    .btn-list { background: #e0e7ff; color: #4338ca; border: 3px solid #a5b4fc; }
+    .btn-admin { background: #f3e8ff; color: #7c3aed; border: 3px solid #c4b5fd; }
+    .btn-qr { background: #fef3c7; color: #b45309; border: 3px solid #fcd34d; }
+    
+    .emoji { font-size: 36px; }
+    
+    .setup-box {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 2px solid #e5e7eb;
+    }
+    .setup-box label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+      color: #78350f;
+    }
+    .setup-box input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    .setup-box input:focus { outline: none; border-color: #f59e0b; }
+    .setup-saved { color: #059669; font-size: 14px; text-align: center; }
+    
+    /* Große Kategorie-Buttons */
+    .categories { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .cat-btn {
+      padding: 20px 12px;
+      border: 3px solid #e5e7eb;
+      border-radius: 16px;
+      background: white;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.15s;
+    }
+    .cat-btn:active { transform: scale(0.95); background: #fffbeb; border-color: #f59e0b; }
+    .cat-btn .emoji { display: block; font-size: 36px; margin-bottom: 8px; }
+    
+    .section-title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #92400e;
+      margin: 16px 0;
+      text-align: center;
+    }
+    
+    .gps-status {
+      text-align: center;
+      padding: 8px;
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+    .gps-status.ok { color: #059669; }
+    .gps-status.error { color: #dc2626; }
+    
+    .back-btn {
+      background: none;
+      border: none;
+      color: #b45309;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 8px 0;
+      margin-bottom: 12px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .export-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-bottom: 10px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .export-geo { background: #7c3aed; color: white; }
+    .export-csv { background: #2563eb; color: white; }
+    .export-qml { background: #059669; color: white; }
+    .delete-all { background: #fee2e2; color: #dc2626; }
+    
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      border-left: 5px solid;
+    }
+    .card-danger { border-color: #ef4444; }
+    .card-good { border-color: #22c55e; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; }
+    .card-type { font-size: 24px; }
+    .card-delete { background: none; border: none; color: #9ca3af; font-size: 20px; cursor: pointer; padding: 8px; }
+    .card-category { font-weight: bold; font-size: 16px; margin-top: 4px; }
+    .card-meta { color: #9ca3af; font-size: 12px; margin-top: 6px; }
+    
+    .empty { text-align: center; padding: 40px; color: #9ca3af; }
+    .empty .emoji { font-size: 48px; }
+    
+    .hidden { display: none !important; }
+    
+    .count-badge {
+      background: #4338ca;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 16px;
+      margin-left: 8px;
+    }
+
+    .admin-section {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .admin-section h3 {
+      color: #7c3aed;
+      margin-bottom: 12px;
+    }
+    .admin-section p {
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    
+    .stats-box {
+      background: #f3f4f6;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .stats-row:last-child { border-bottom: none; }
+
+    .qr-container {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .qr-name {
+      font-size: 18px;
+      font-weight: bold;
+      color: #78350f;
+      margin-top: 12px;
+    }
+    .qr-count {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .scanner-container {
+      background: black;
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .scanner-container video {
+      width: 100%;
+      display: block;
+    }
+    .scan-status {
+      text-align: center;
+      padding: 12px;
+      font-weight: bold;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .scan-success { background: #d1fae5; color: #065f46; }
+    .scan-waiting { background: #fef3c7; color: #92400e; }
+
+    /* Erfolgs-Meldung */
+    .toast {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #059669;
+      color: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 18px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+      animation: fadeInOut 2s ease;
+    }
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+      15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+      85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    }
+  </style>
+</head>
+<body>
+  <header>🔍 Schulweg-Detektive</header>
+  
+  <main>
+    <!-- Startseite -->
+    <div id="homeView">
+      <div class="setup-box">
+        <label>👤 Dein Name</label>
+        <input type="text" id="childName" placeholder="z.B. Max">
+        <label>🏫 Deine Klasse</label>
+        <input type="text" id="childClass" placeholder="z.B. 3b">
+      </div>
+      
+      <div class="gps-status" id="gpsStatus">📍 Standort wird gesucht...</div>
+      
+      <button class="big-btn btn-danger" id="btnDanger">
+        <span class="emoji">⚠️</span> Hier ist's blöd!
+      </button>
+      
+      <button class="big-btn btn-good" id="btnGood">
+        <span class="emoji">👍</span> Hier ist's gut!
+      </button>
+      
+      <button class="big-btn btn-list" id="btnList">
+        <span class="emoji">📋</span> Meine Meldungen <span class="count-badge" id="count">0</span>
+      </button>
+
+      <button class="big-btn btn-qr" id="btnShowQR">
+        <span class="emoji">📱</span> QR-Code zeigen
+      </button>
+      
+      <button class="big-btn btn-admin" id="btnAdmin">
+        <span class="emoji">👨‍🏫</span> Lehrer-Bereich
+      </button>
+    </div>
+
+    <!-- Kategorie wählen - DANGER -->
+    <div id="dangerView" class="hidden">
+      <button class="back-btn" id="backFromDanger">← Zurück</button>
+      <div class="section-title">Was ist hier das Problem?</div>
+      <div class="gps-status" id="gpsStatusDanger">📍 Standort wird gesucht...</div>
+      <div class="categories">
+        <button class="cat-btn" data-cat="autos" data-type="danger">
+          <span class="emoji">🚗</span>Zu schnelle Autos
+        </button>
+        <button class="cat-btn" data-cat="parken" data-type="danger">
+          <span class="emoji">🚙</span>Auto im Weg
+        </button>
+        <button class="cat-btn" data-cat="gehweg" data-type="danger">
+          <span class="emoji">🚶</span>Kein Gehweg
+        </button>
+        <button class="cat-btn" data-cat="querung" data-type="danger">
+          <span class="emoji">🚦</span>Schwer zu überqueren
+        </button>
+        <button class="cat-btn" data-cat="sicht" data-type="danger">
+          <span class="emoji">👀</span>Schlecht zu sehen
+        </button>
+        <button class="cat-btn" data-cat="dunkel" data-type="danger">
+          <span class="emoji">🌙</span>Zu dunkel
+        </button>
+        <button class="cat-btn" data-cat="baustelle" data-type="danger">
+          <span class="emoji">🚧</span>Baustelle
+        </button>
+        <button class="cat-btn" data-cat="sonstiges" data-type="danger">
+          <span class="emoji">❓</span>Etwas anderes
+        </button>
+      </div>
+    </div>
+
+    <!-- Kategorie wählen - GOOD -->
+    <div id="goodView" class="hidden">
+      <button class="back-btn" id="backFromGood">← Zurück</button>
+      <div class="section-title">Was ist hier gut?</div>
+      <div class="gps-status" id="gpsStatusGood">📍 Standort wird gesucht...</div>
+      <div class="categories">
+        <button class="cat-btn" data-cat="ampel" data-type="good">
+          <span class="emoji">🚦</span>Gute Ampel
+        </button>
+        <button class="cat-btn" data-cat="zebrastreifen" data-type="good">
+          <span class="emoji">🦓</span>Zebrastreifen
+        </button>
+        <button class="cat-btn" data-cat="schuelerlotse" data-type="good">
+          <span class="emoji">🧑‍🦺</span>Schülerlotse
+        </button>
+        <button class="cat-btn" data-cat="breiter-gehweg" data-type="good">
+          <span class="emoji">🛣️</span>Breiter Gehweg
+        </button>
+        <button class="cat-btn" data-cat="tempo30" data-type="good">
+          <span class="emoji">🐌</span>Tempo 30
+        </button>
+        <button class="cat-btn" data-cat="gut-sonstiges" data-type="good">
+          <span class="emoji">⭐</span>Etwas anderes
+        </button>
+      </div>
+    </div>
+
+    <!-- Liste -->
+    <div id="listView" class="hidden">
+      <button class="back-btn" id="backFromList">← Zurück</button>
+      <div id="exportBtns" class="hidden">
+        <button class="big-btn btn-qr" id="btnShowQRFromList">
+          <span class="emoji">📱</span> QR-Code zeigen
+        </button>
+        <button class="export-btn delete-all" id="btnDeleteOwn">🗑️ Alle löschen</button>
+      </div>
+      <div id="reportList"></div>
+    </div>
+
+    <!-- QR Code Anzeige -->
+    <div id="qrView" class="hidden">
+      <button class="back-btn" id="backFromQR">← Zurück</button>
+      <div class="section-title">Zeige diesen Code deinem Lehrer</div>
+      <div class="qr-container">
+        <img id="qrImage" style="max-width:280px;">
+        <div class="qr-name" id="qrName"></div>
+        <div class="qr-count" id="qrCount"></div>
+      </div>
+    </div>
+
+    <!-- Admin -->
+    <div id="adminView" class="hidden">
+      <button class="back-btn" id="backFromAdmin">← Zurück</button>
+      
+      <div class="admin-section">
+        <h3>📷 QR-Codes scannen</h3>
+        <p>Scanne die QR-Codes der Kinder.</p>
+        <button class="big-btn btn-qr" id="btnStartScan">
+          <span class="emoji">📷</span> Scanner starten
+        </button>
+      </div>
+
+      <div class="admin-section">
+        <h3>📊 Statistik</h3>
+        <div class="stats-box">
+          <div class="stats-row"><span>Gesamte Meldungen:</span><strong id="statTotal">0</strong></div>
+          <div class="stats-row"><span>⚠️ Gefahrenstellen:</span><strong id="statDanger">0</strong></div>
+          <div class="stats-row"><span>👍 Gute Stellen:</span><strong id="statGood">0</strong></div>
+          <div class="stats-row"><span>👥 Kinder:</span><strong id="statChildren">0</strong></div>
+        </div>
+        <div id="categoryStats"></div>
+      </div>
+
+      <div class="admin-section">
+        <h3>📤 Export für QGIS</h3>
+        <button class="export-btn export-geo" id="btnExportAll">📥 Alle Meldungen (GeoJSON)</button>
+        <button class="export-btn export-geo" style="background:#dc2626" id="btnExportDanger">📥 Nur Gefahrenstellen</button>
+        <button class="export-btn export-geo" style="background:#059669" id="btnExportGood">📥 Nur gute Stellen</button>
+        <button class="export-btn export-qml" id="btnExportQML">🎨 QGIS-Stildatei</button>
+        <button class="export-btn export-csv" id="btnExportCSV">📥 CSV für Excel</button>
+      </div>
+
+      <div class="admin-section">
+        <h3>🗑️ Daten verwalten</h3>
+        <button class="export-btn delete-all" id="btnDeleteAll">Alle gesammelten Daten löschen</button>
+      </div>
+    </div>
+
+    <!-- Scanner -->
+    <div id="scanView" class="hidden">
+      <button class="back-btn" id="backFromScan">← Zurück</button>
+      <div class="scan-status scan-waiting" id="scanStatus">📷 QR-Code vor die Kamera halten</div>
+      <div class="scanner-container">
+        <video id="scanVideo" playsinline></video>
+      </div>
+      <canvas id="scanCanvas" style="display:none;"></canvas>
+      <div id="scannedList"></div>
+    </div>
+  </main>
+
+  <script>
+    var reports = JSON.parse(localStorage.getItem('schulwegReports') || '[]');
+    var allReports = JSON.parse(localStorage.getItem('schulwegAllReports') || '[]');
+    var position = null;
+    var scanning = false;
+    var videoStream = null;
+    var watchId = null;
+    
+    document.getElementById('childName').value = localStorage.getItem('childName') || '';
+    document.getElementById('childClass').value = localStorage.getItem('childClass') || '';
+    
+    updateCount();
+    updateStats();
+    startGPSWatch();
+
+    // GPS kontinuierlich tracken
+    function startGPSWatch() {
+      if (navigator.geolocation) {
+        watchId = navigator.geolocation.watchPosition(
+          function(pos) {
+            position = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy };
+            updateGPSStatus('📍 Standort OK (±' + position.acc.toFixed(0) + 'm)', 'ok');
+          },
+          function(err) {
+            updateGPSStatus('⚠️ Kein GPS - tippe für neuen Versuch', 'error');
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+        );
+      }
+    }
+
+    function updateGPSStatus(text, status) {
+      var elements = ['gpsStatus', 'gpsStatusDanger', 'gpsStatusGood'];
+      elements.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) {
+          el.textContent = text;
+          el.className = 'gps-status' + (status ? ' ' + status : '');
+        }
+      });
+    }
+
+    // Event Listeners
+    document.getElementById('childName').addEventListener('input', saveSetup);
+    document.getElementById('childClass').addEventListener('input', saveSetup);
+    document.getElementById('btnDanger').addEventListener('click', function() { showDanger(); });
+    document.getElementById('btnGood').addEventListener('click', function() { showGood(); });
+    document.getElementById('btnList').addEventListener('click', showList);
+    document.getElementById('btnAdmin').addEventListener('click', function() {
+      var pw = prompt('Lehrer-Passwort eingeben:');
+      if (pw === 'holmes') {
+        showAdmin();
+      } else if (pw !== null) {
+        alert('Falsches Passwort!');
+      }
+    });
+    document.getElementById('btnShowQR').addEventListener('click', showQR);
+    document.getElementById('btnShowQRFromList').addEventListener('click', showQR);
+    document.getElementById('backFromDanger').addEventListener('click', showHome);
+    document.getElementById('backFromGood').addEventListener('click', showHome);
+    document.getElementById('backFromList').addEventListener('click', showHome);
+    document.getElementById('backFromAdmin').addEventListener('click', showHome);
+    document.getElementById('backFromQR').addEventListener('click', showHome);
+    document.getElementById('backFromScan').addEventListener('click', stopScanAndGoBack);
+    document.getElementById('btnDeleteOwn').addEventListener('click', deleteAll);
+    document.getElementById('btnStartScan').addEventListener('click', startScan);
+    document.getElementById('btnExportAll').addEventListener('click', exportAllGeoJSON);
+    document.getElementById('btnExportDanger').addEventListener('click', exportDangerGeoJSON);
+    document.getElementById('btnExportGood').addEventListener('click', exportGoodGeoJSON);
+    document.getElementById('btnExportQML').addEventListener('click', exportQML);
+    document.getElementById('btnExportCSV').addEventListener('click', exportAllCSV);
+    document.getElementById('btnDeleteAll').addEventListener('click', deleteAllAdmin);
+
+    // Kategorie-Buttons - DIREKT SPEICHERN
+    document.querySelectorAll('.cat-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var cat = this.getAttribute('data-cat');
+        var type = this.getAttribute('data-type');
+        saveReport(type, cat);
+      });
+    });
+
+    function saveSetup() {
+      localStorage.setItem('childName', document.getElementById('childName').value.trim());
+      localStorage.setItem('childClass', document.getElementById('childClass').value.trim());
+    }
+
+    function updateCount() {
+      document.getElementById('count').textContent = reports.length;
+    }
+
+    function hideAllViews() {
+      document.getElementById('homeView').classList.add('hidden');
+      document.getElementById('dangerView').classList.add('hidden');
+      document.getElementById('goodView').classList.add('hidden');
+      document.getElementById('listView').classList.add('hidden');
+      document.getElementById('adminView').classList.add('hidden');
+      document.getElementById('qrView').classList.add('hidden');
+      document.getElementById('scanView').classList.add('hidden');
+    }
+
+    function showHome() {
+      hideAllViews();
+      document.getElementById('homeView').classList.remove('hidden');
+    }
+
+    function showDanger() {
+      var name = document.getElementById('childName').value.trim();
+      var cls = document.getElementById('childClass').value.trim();
+      if (!name || !cls) { alert('Bitte zuerst Name und Klasse eingeben!'); return; }
+      if (!position) { 
+        alert('Warte kurz - Standort wird noch gesucht...');
+        return;
+      }
+      hideAllViews();
+      document.getElementById('dangerView').classList.remove('hidden');
+    }
+
+    function showGood() {
+      var name = document.getElementById('childName').value.trim();
+      var cls = document.getElementById('childClass').value.trim();
+      if (!name || !cls) { alert('Bitte zuerst Name und Klasse eingeben!'); return; }
+      if (!position) { 
+        alert('Warte kurz - Standort wird noch gesucht...');
+        return;
+      }
+      hideAllViews();
+      document.getElementById('goodView').classList.remove('hidden');
+    }
+
+    var categoryLabels = {
+      'autos': 'Zu schnelle Autos', 'parken': 'Auto im Weg', 'gehweg': 'Kein Gehweg', 'querung': 'Schwer zu überqueren',
+      'sicht': 'Schlecht zu sehen', 'dunkel': 'Zu dunkel',
+      'baustelle': 'Baustelle', 'sonstiges': 'Sonstiges', 'ampel': 'Gute Ampel',
+      'zebrastreifen': 'Zebrastreifen', 'schuelerlotse': 'Schülerlotse', 'breiter-gehweg': 'Breiter Gehweg',
+      'tempo30': 'Tempo 30', 'gut-sonstiges': 'Sonstiges Gutes'
+    };
+
+    function saveReport(type, category) {
+      reports.unshift({
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        type: type,
+        category: category,
+        categoryLabel: categoryLabels[category] || category,
+        note: '',
+        childName: document.getElementById('childName').value.trim(),
+        childClass: document.getElementById('childClass').value.trim(),
+        lat: position.lat, 
+        lng: position.lng, 
+        acc: position.acc
+      });
+      localStorage.setItem('schulwegReports', JSON.stringify(reports));
+      updateCount();
+      
+      // Erfolgs-Toast zeigen
+      showToast('✓ Gespeichert!');
+      
+      // Zurück zur Startseite
+      showHome();
+    }
+
+    function showToast(message) {
+      var toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(function() { toast.remove(); }, 2000);
+    }
+
+    function showList() {
+      hideAllViews();
+      document.getElementById('listView').classList.remove('hidden');
+      document.getElementById('exportBtns').classList.toggle('hidden', reports.length === 0);
+      renderList();
+    }
+
+    function showAdmin() {
+      hideAllViews();
+      document.getElementById('adminView').classList.remove('hidden');
+      updateStats();
+    }
+
+    function renderList() {
+      var list = document.getElementById('reportList');
+      if (reports.length === 0) {
+        list.innerHTML = '<div class="empty"><span class="emoji">📭</span><br>Noch keine Meldungen</div>';
+        return;
+      }
+      var html = '';
+      for (var i = 0; i < reports.length; i++) {
+        var r = reports[i];
+        html += '<div class="card card-' + (r.type === 'danger' ? 'danger' : 'good') + '">' +
+          '<div class="card-header"><span class="card-type">' + (r.type === 'danger' ? '⚠️' : '👍') + '</span>' +
+          '<button class="card-delete" data-id="' + r.id + '">✕</button></div>' +
+          '<div class="card-category">' + r.categoryLabel + '</div>' +
+          '<div class="card-meta">📍 ' + r.lat.toFixed(5) + ', ' + r.lng.toFixed(5) + '<br>🕐 ' + new Date(r.timestamp).toLocaleString('de-DE') + '</div></div>';
+      }
+      list.innerHTML = html;
+      list.querySelectorAll('.card-delete').forEach(function(btn) {
+        btn.addEventListener('click', function() { deleteReport(parseInt(this.getAttribute('data-id'))); });
+      });
+    }
+
+    function deleteReport(id) {
+      if (!confirm('Löschen?')) return;
+      reports = reports.filter(function(r) { return r.id !== id; });
+      localStorage.setItem('schulwegReports', JSON.stringify(reports));
+      updateCount();
+      showList();
+    }
+
+    function deleteAll() {
+      if (!confirm('Alle Meldungen löschen?')) return;
+      reports = [];
+      localStorage.setItem('schulwegReports', '[]');
+      updateCount();
+      showList();
+    }
+
+    function showQR() {
+      if (reports.length === 0) {
+        alert('Du hast noch keine Meldungen!');
+        return;
+      }
+      
+      var name = document.getElementById('childName').value.trim();
+      var cls = document.getElementById('childClass').value.trim();
+      
+      // Kompakte Daten für QR
+      var qrData = {
+        n: name,
+        c: cls,
+        r: reports.map(function(r) {
+          return {
+            t: r.type === 'danger' ? 'd' : 'g',
+            k: r.category,
+            la: Math.round(r.lat * 100000) / 100000,
+            lo: Math.round(r.lng * 100000) / 100000,
+            ts: r.timestamp.substring(0, 19)
+          };
+        })
+      };
+      
+      var qrString = JSON.stringify(qrData);
+      
+      if (qrString.length > 1800) {
+        alert('Zu viele Meldungen für QR-Code! Bitte weniger als 12 Meldungen.');
+        return;
+      }
+      
+      hideAllViews();
+      document.getElementById('qrView').classList.remove('hidden');
+      document.getElementById('qrName').textContent = name + ' (' + cls + ')';
+      document.getElementById('qrCount').textContent = reports.length + ' Meldung' + (reports.length > 1 ? 'en' : '');
+      
+      // QR-Code über API generieren
+      var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' + encodeURIComponent(qrString);
+      document.getElementById('qrImage').src = qrUrl;
+    }
+
+    function startScan() {
+      // jsQR Bibliothek laden falls noch nicht vorhanden
+      if (typeof jsQR === 'undefined') {
+        var script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+        script.onload = function() {
+          startScanReal();
+        };
+        script.onerror = function() {
+          alert('Scanner konnte nicht geladen werden. Internetverbindung prüfen!');
+        };
+        document.head.appendChild(script);
+      } else {
+        startScanReal();
+      }
+    }
+
+    function startScanReal() {
+      hideAllViews();
+      document.getElementById('scanView').classList.remove('hidden');
+      document.getElementById('scanStatus').textContent = '📷 QR-Code vor die Kamera halten';
+      document.getElementById('scanStatus').className = 'scan-status scan-waiting';
+      
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      .then(function(stream) {
+        videoStream = stream;
+        var video = document.getElementById('scanVideo');
+        video.srcObject = stream;
+        video.play();
+        scanning = true;
+        requestAnimationFrame(scanLoop);
+      })
+      .catch(function(err) {
+        alert('Kamera-Fehler: ' + err.message);
+        showAdmin();
+      });
+    }
+
+    function scanLoop() {
+      if (!scanning) return;
+      var video = document.getElementById('scanVideo');
+      var canvas = document.getElementById('scanCanvas');
+      var ctx = canvas.getContext('2d');
+      
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var code = jsQR(imageData.data, imageData.width, imageData.height);
+        
+        if (code) {
+          try {
+            var data = JSON.parse(code.data);
+            if (data.n && data.r) {
+              processScannedData(data);
+              return;
+            }
+          } catch (e) {}
+        }
+      }
+      requestAnimationFrame(scanLoop);
+    }
+
+    function processScannedData(data) {
+      var imported = 0;
+      data.r.forEach(function(r) {
+        var fullReport = {
+          id: Date.now() + Math.random(),
+          timestamp: r.ts,
+          type: r.t === 'd' ? 'danger' : 'good',
+          category: r.k,
+          categoryLabel: categoryLabels[r.k] || r.k,
+          note: '',
+          childName: data.n,
+          childClass: data.c,
+          lat: r.la,
+          lng: r.lo,
+          acc: 0
+        };
+        
+        var isDuplicate = allReports.some(function(existing) {
+          return existing.timestamp === fullReport.timestamp && existing.childName === fullReport.childName;
+        });
+        
+        if (!isDuplicate) {
+          allReports.push(fullReport);
+          imported++;
+        }
+      });
+      
+      localStorage.setItem('schulwegAllReports', JSON.stringify(allReports));
+      
+      var status = document.getElementById('scanStatus');
+      status.className = 'scan-status scan-success';
+      status.textContent = '✓ ' + data.n + ': ' + imported + ' Meldung' + (imported !== 1 ? 'en' : '') + ' hinzugefügt!';
+      
+      updateScannedList();
+      
+      setTimeout(function() {
+        if (scanning) {
+          status.className = 'scan-status scan-waiting';
+          status.textContent = '📷 Nächsten QR-Code scannen...';
+          requestAnimationFrame(scanLoop);
+        }
+      }, 2000);
+    }
+
+    function updateScannedList() {
+      var cs = {};
+      allReports.forEach(function(r) { 
+        var key = r.childName + ' (' + r.childClass + ')';
+        cs[key] = (cs[key] || 0) + 1;
+      });
+      var html = '<div class="admin-section"><h3>✓ Gescannt</h3>';
+      Object.keys(cs).forEach(function(name) {
+        html += '<div class="stats-row"><span>' + name + '</span><strong>' + cs[name] + '</strong></div>';
+      });
+      document.getElementById('scannedList').innerHTML = html + '</div>';
+    }
+
+    function stopScanAndGoBack() {
+      scanning = false;
+      if (videoStream) {
+        videoStream.getTracks().forEach(function(track) { track.stop(); });
+        videoStream = null;
+      }
+      showAdmin();
+    }
+
+    function updateStats() {
+      var total = allReports.length;
+      var danger = allReports.filter(function(r) { return r.type === 'danger'; }).length;
+      var good = allReports.filter(function(r) { return r.type === 'good'; }).length;
+      var cs = {}; allReports.forEach(function(r) { cs[r.childName + r.childClass] = 1; });
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statDanger').textContent = danger;
+      document.getElementById('statGood').textContent = good;
+      document.getElementById('statChildren').textContent = Object.keys(cs).length;
+      
+      var cc = {}; allReports.forEach(function(r) { cc[r.categoryLabel] = (cc[r.categoryLabel]||0) + 1; });
+      var sorted = Object.keys(cc).map(function(k) { return [k, cc[k]]; }).sort(function(a,b) { return b[1]-a[1]; });
+      var html = sorted.length ? '<div class="stats-box"><strong>Häufigste:</strong>' : '';
+      for (var i = 0; i < Math.min(5, sorted.length); i++) {
+        html += '<div class="stats-row"><span>' + sorted[i][0] + '</span><strong>' + sorted[i][1] + '</strong></div>';
+      }
+      document.getElementById('categoryStats').innerHTML = html ? html + '</div>' : '';
+    }
+
+    function createGeoJSON(data) {
+      return { type: 'FeatureCollection', features: data.map(function(r) {
+        return { type: 'Feature', geometry: { type: 'Point', coordinates: [r.lng, r.lat] },
+          properties: { type: r.type, category: r.category, categoryLabel: r.categoryLabel,
+            childName: r.childName, childClass: r.childClass, timestamp: r.timestamp }};
+      })};
+    }
+
+    function exportAllGeoJSON() {
+      if (!allReports.length) { alert('Keine Daten'); return; }
+      download(JSON.stringify(createGeoJSON(allReports), null, 2), 'schulweg-alle.geojson', 'application/json');
+    }
+    function exportDangerGeoJSON() {
+      var d = allReports.filter(function(r) { return r.type === 'danger'; });
+      if (!d.length) { alert('Keine Gefahrenstellen'); return; }
+      download(JSON.stringify(createGeoJSON(d), null, 2), 'schulweg-gefahren.geojson', 'application/json');
+    }
+    function exportGoodGeoJSON() {
+      var d = allReports.filter(function(r) { return r.type === 'good'; });
+      if (!d.length) { alert('Keine guten Stellen'); return; }
+      download(JSON.stringify(createGeoJSON(d), null, 2), 'schulweg-gut.geojson', 'application/json');
+    }
+    function exportAllCSV() {
+      if (!allReports.length) { alert('Keine Daten'); return; }
+      var rows = ['Typ;Kategorie;Name;Klasse;Lat;Lng;Zeit'];
+      allReports.forEach(function(r) { rows.push([r.type,r.categoryLabel,r.childName,r.childClass,r.lat,r.lng,r.timestamp].join(';')); });
+      download(rows.join('\n'), 'schulweg-alle.csv', 'text/csv;charset=utf-8');
+    }
+    function exportQML() {
+      var qml = '<!DOCTYPE qgis PUBLIC "http://mrcc.com/qgis.dtd" "SYSTEM">\n<qgis version="3.28">\n<renderer-v2 type="categorizedSymbol" attr="type">\n<categories>\n<category symbol="0" value="danger" label="Gefahrenstelle"/>\n<category symbol="1" value="good" label="Gute Stelle"/>\n</categories>\n<symbols>\n<symbol type="marker" name="0"><layer class="SimpleMarker"><prop k="color" v="220,38,38,255"/><prop k="size" v="4"/></layer></symbol>\n<symbol type="marker" name="1"><layer class="SimpleMarker"><prop k="color" v="34,197,94,255"/><prop k="size" v="4"/></layer></symbol>\n</symbols>\n</renderer-v2>\n</qgis>';
+      download(qml, 'schulweg-stil.qml', 'application/xml');
+    }
+    function deleteAllAdmin() {
+      if (!confirm('Alle Daten löschen?')) return;
+      allReports = [];
+      localStorage.setItem('schulwegAllReports', '[]');
+      updateStats();
+      document.getElementById('scannedList').innerHTML = '';
+    }
+    function download(content, filename, type) {
+      try {
+        var blob = new Blob([content], {type: type});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 100);
+      } catch(e) {
+        alert('Download-Fehler: ' + e.message);
+      }
+    }
+    // Service Worker registrieren für Offline-Funktionalität
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(function(reg) {
+        console.log('Service Worker registriert');
+      }).catch(function(err) {
+        console.log('Service Worker Fehler:', err);
+      });
+    }
+  </script>
+</body>
+</html>
