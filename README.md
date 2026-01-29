@@ -72,5 +72,5 @@ Frei nutzbar für Bildungszwecke.
 
 ---
 
-*Entwickelt von der Jugendpflege Kirkel/2Rat 2026*
+*Entwickelt von der Jugendpflege Kirkel/2Rat Büro für Radverkehrsplanung 2026*
 
