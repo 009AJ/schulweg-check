@@ -242,6 +242,40 @@
       color: #6b7280;
       font-size: 14px;
     }
+    .qr-pager {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .qr-nav-btn {
+      background: #f59e0b;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .qr-nav-btn:disabled {
+      background: #e5e7eb;
+      color: #9ca3af;
+    }
+    #qrPageInfo {
+      font-size: 20px;
+      font-weight: bold;
+      color: #b45309;
+    }
+    .qr-part-info {
+      margin-top: 12px;
+      padding: 10px;
+      background: #fef3c7;
+      border-radius: 8px;
+      color: #92400e;
+      font-weight: bold;
+    }
 
     .scanner-container {
       background: black;
@@ -411,9 +445,15 @@
       <button class="back-btn" id="backFromQR">← Zurück</button>
       <div class="section-title">Zeige diesen Code deinem Lehrer</div>
       <div class="qr-container">
+        <div id="qrPager" class="qr-pager hidden">
+          <button class="qr-nav-btn" id="qrPrev">◀ Zurück</button>
+          <span id="qrPageInfo">1 / 2</span>
+          <button class="qr-nav-btn" id="qrNext">Weiter ▶</button>
+        </div>
         <img id="qrImage" style="max-width:280px;">
         <div class="qr-name" id="qrName"></div>
         <div class="qr-count" id="qrCount"></div>
+        <div id="qrPartInfo" class="qr-part-info hidden"></div>
       </div>
     </div>
 
@@ -543,6 +583,18 @@
     document.getElementById('backFromList').addEventListener('click', showHome);
     document.getElementById('backFromAdmin').addEventListener('click', showHome);
     document.getElementById('backFromQR').addEventListener('click', showHome);
+    document.getElementById('qrPrev').addEventListener('click', function() {
+      if (currentQR > 0) {
+        currentQR--;
+        updateQRDisplay();
+      }
+    });
+    document.getElementById('qrNext').addEventListener('click', function() {
+      if (currentQR < qrCodes.length - 1) {
+        currentQR++;
+        updateQRDisplay();
+      }
+    });
     document.getElementById('backFromScan').addEventListener('click', stopScanAndGoBack);
     document.getElementById('btnDeleteOwn').addEventListener('click', deleteAll);
     document.getElementById('btnStartScan').addEventListener('click', startScan);
@@ -743,6 +795,9 @@
       showList();
     }
 
+    var qrCodes = [];
+    var currentQR = 0;
+
     function showQR() {
       if (reports.length === 0) {
         alert('Du hast noch keine Meldungen!');
@@ -754,38 +809,87 @@
       var transport = document.getElementById('childTransport').value;
       var direction = document.getElementById('childDirection').value.trim();
       
-      // Kompakte Daten für QR
-      var qrData = {
-        n: name,
-        c: cls,
-        tr: transport,
-        di: direction,
-        r: reports.map(function(r) {
-          return {
-            t: r.type === 'danger' ? 'd' : 'g',
-            k: r.category,
-            la: Math.round(r.lat * 100000) / 100000,
-            lo: Math.round(r.lng * 100000) / 100000,
-            ts: r.timestamp.substring(0, 19)
+      // Meldungen in kompaktes Format umwandeln
+      var compactReports = reports.map(function(r) {
+        return {
+          t: r.type === 'danger' ? 'd' : 'g',
+          k: r.category,
+          la: Math.round(r.lat * 100000) / 100000,
+          lo: Math.round(r.lng * 100000) / 100000,
+          ts: r.timestamp.substring(0, 19)
+        };
+      });
+      
+      // Prüfen ob wir aufteilen müssen (mehr als 10 Meldungen)
+      var maxPerCode = 10;
+      qrCodes = [];
+      
+      if (compactReports.length <= maxPerCode) {
+        // Alles in einen QR-Code
+        var qrData = {
+          n: name,
+          c: cls,
+          tr: transport,
+          di: direction,
+          r: compactReports
+        };
+        qrCodes.push(JSON.stringify(qrData));
+      } else {
+        // Aufteilen in mehrere QR-Codes
+        var totalParts = Math.ceil(compactReports.length / maxPerCode);
+        for (var i = 0; i < totalParts; i++) {
+          var start = i * maxPerCode;
+          var end = Math.min((i + 1) * maxPerCode, compactReports.length);
+          var partReports = compactReports.slice(start, end);
+          
+          var qrData = {
+            n: name,
+            c: cls,
+            tr: transport,
+            di: direction,
+            p: (i + 1),  // Teil-Nummer
+            tp: totalParts,  // Gesamt-Teile
+            r: partReports
           };
-        })
-      };
+          qrCodes.push(JSON.stringify(qrData));
+        }
+      }
       
-      var qrString = JSON.stringify(qrData);
-      
-      if (qrString.length > 1800) {
-        alert('Zu viele Meldungen für QR-Code! Bitte weniger als 12 Meldungen.');
+      // Prüfen ob einzelne Codes zu groß
+      var tooLarge = qrCodes.some(function(code) { return code.length > 1800; });
+      if (tooLarge) {
+        alert('QR-Code zu groß! Bitte weniger Meldungen machen.');
         return;
       }
       
+      currentQR = 0;
       hideAllViews();
       document.getElementById('qrView').classList.remove('hidden');
       document.getElementById('qrName').textContent = name + ' (' + cls + ')';
       document.getElementById('qrCount').textContent = reports.length + ' Meldung' + (reports.length > 1 ? 'en' : '');
       
-      // QR-Code über API generieren
+      updateQRDisplay();
+    }
+    
+    function updateQRDisplay() {
+      var qrString = qrCodes[currentQR];
       var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=' + encodeURIComponent(qrString);
       document.getElementById('qrImage').src = qrUrl;
+      
+      var pager = document.getElementById('qrPager');
+      var partInfo = document.getElementById('qrPartInfo');
+      
+      if (qrCodes.length > 1) {
+        pager.classList.remove('hidden');
+        partInfo.classList.remove('hidden');
+        document.getElementById('qrPageInfo').textContent = (currentQR + 1) + ' / ' + qrCodes.length;
+        document.getElementById('qrPrev').disabled = currentQR === 0;
+        document.getElementById('qrNext').disabled = currentQR === qrCodes.length - 1;
+        partInfo.textContent = '⚠️ Zeige BEIDE Codes! (' + (currentQR + 1) + ' von ' + qrCodes.length + ')';
+      } else {
+        pager.classList.add('hidden');
+        partInfo.classList.add('hidden');
+      }
     }
 
     function startScan() {
@@ -852,7 +956,86 @@
       requestAnimationFrame(scanLoop);
     }
 
+    var pendingScans = {}; // Speichert unvollständige mehrteilige Scans
+
     function processScannedData(data) {
+      // Prüfen ob es ein Teilcode ist
+      if (data.p && data.tp) {
+        // Mehrteiliger QR-Code
+        var scanKey = data.n + '_' + data.c; // Eindeutiger Schlüssel pro Kind
+        
+        if (!pendingScans[scanKey]) {
+          pendingScans[scanKey] = {
+            name: data.n,
+            cls: data.c,
+            transport: data.tr || '',
+            direction: data.di || '',
+            totalParts: data.tp,
+            parts: {}
+          };
+        }
+        
+        // Teil speichern
+        pendingScans[scanKey].parts[data.p] = data.r;
+        
+        var status = document.getElementById('scanStatus');
+        var receivedParts = Object.keys(pendingScans[scanKey].parts).length;
+        
+        if (receivedParts < data.tp) {
+          // Noch nicht vollständig
+          status.className = 'scan-status scan-waiting';
+          status.textContent = '📱 ' + data.n + ': Teil ' + data.p + '/' + data.tp + ' ✓ - Jetzt Teil ' + (receivedParts + 1) + ' scannen!';
+          
+          setTimeout(function() {
+            if (scanning) {
+              requestAnimationFrame(scanLoop);
+            }
+          }, 1500);
+          return;
+        }
+        
+        // Alle Teile da - zusammenführen
+        var allReportsFromParts = [];
+        for (var i = 1; i <= data.tp; i++) {
+          allReportsFromParts = allReportsFromParts.concat(pendingScans[scanKey].parts[i]);
+        }
+        
+        // Umwandeln in volles Format und importieren
+        var imported = importReports({
+          n: pendingScans[scanKey].name,
+          c: pendingScans[scanKey].cls,
+          tr: pendingScans[scanKey].transport,
+          di: pendingScans[scanKey].direction,
+          r: allReportsFromParts
+        });
+        
+        // Pending löschen
+        delete pendingScans[scanKey];
+        
+        status.className = 'scan-status scan-success';
+        status.textContent = '✓ ' + data.n + ': Alle ' + data.tp + ' Teile - ' + imported + ' Meldungen hinzugefügt!';
+        
+      } else {
+        // Normaler einziger QR-Code
+        var imported = importReports(data);
+        
+        var status = document.getElementById('scanStatus');
+        status.className = 'scan-status scan-success';
+        status.textContent = '✓ ' + data.n + ': ' + imported + ' Meldung' + (imported !== 1 ? 'en' : '') + ' hinzugefügt!';
+      }
+      
+      updateScannedList();
+      
+      setTimeout(function() {
+        if (scanning) {
+          status.className = 'scan-status scan-waiting';
+          status.textContent = '📷 Nächsten QR-Code scannen...';
+          requestAnimationFrame(scanLoop);
+        }
+      }, 2000);
+    }
+    
+    function importReports(data) {
       var imported = 0;
       data.r.forEach(function(r) {
         var fullReport = {
@@ -882,20 +1065,7 @@
       });
       
       localStorage.setItem('schulwegAllReports', JSON.stringify(allReports));
-      
-      var status = document.getElementById('scanStatus');
-      status.className = 'scan-status scan-success';
-      status.textContent = '✓ ' + data.n + ': ' + imported + ' Meldung' + (imported !== 1 ? 'en' : '') + ' hinzugefügt!';
-      
-      updateScannedList();
-      
-      setTimeout(function() {
-        if (scanning) {
-          status.className = 'scan-status scan-waiting';
-          status.textContent = '📷 Nächsten QR-Code scannen...';
-          requestAnimationFrame(scanLoop);
-        }
-      }, 2000);
+      return imported;
     }
 
     function updateScannedList() {
@@ -975,17 +1145,17 @@
 
     function exportAllGeoJSON() {
       if (!allReports.length) { alert('Keine Daten'); return; }
-      download(JSON.stringify(createGeoJSON(allReports), null, 2), 'schulweg-alle.geojson', 'application/json');
+      download(JSON.stringify(createGeoJSON(allReports), null, 2), 'schulweg-alle.geojson', 'text/plain');
     }
     function exportDangerGeoJSON() {
       var d = allReports.filter(function(r) { return r.type === 'danger'; });
       if (!d.length) { alert('Keine Gefahrenstellen'); return; }
-      download(JSON.stringify(createGeoJSON(d), null, 2), 'schulweg-gefahren.geojson', 'application/json');
+      download(JSON.stringify(createGeoJSON(d), null, 2), 'schulweg-gefahren.geojson', 'text/plain');
     }
     function exportGoodGeoJSON() {
       var d = allReports.filter(function(r) { return r.type === 'good'; });
       if (!d.length) { alert('Keine guten Stellen'); return; }
-      download(JSON.stringify(createGeoJSON(d), null, 2), 'schulweg-gut.geojson', 'application/json');
+      download(JSON.stringify(createGeoJSON(d), null, 2), 'schulweg-gut.geojson', 'text/plain');
     }
     function exportAllCSV() {
       if (!allReports.length) { alert('Keine Daten'); return; }
@@ -995,7 +1165,7 @@
     }
     function exportQML() {
       var qml = '<!DOCTYPE qgis PUBLIC "http://mrcc.com/qgis.dtd" "SYSTEM">\n<qgis version="3.28">\n<renderer-v2 type="categorizedSymbol" attr="type">\n<categories>\n<category symbol="0" value="danger" label="Gefahrenstelle"/>\n<category symbol="1" value="good" label="Gute Stelle"/>\n</categories>\n<symbols>\n<symbol type="marker" name="0"><layer class="SimpleMarker"><prop k="color" v="220,38,38,255"/><prop k="size" v="4"/></layer></symbol>\n<symbol type="marker" name="1"><layer class="SimpleMarker"><prop k="color" v="34,197,94,255"/><prop k="size" v="4"/></layer></symbol>\n</symbols>\n</renderer-v2>\n</qgis>';
-      download(qml, 'schulweg-stil.qml', 'application/xml');
+      download(qml, 'schulweg-stil.qml', 'text/plain');
     }
     function deleteAllAdmin() {
       if (!confirm('Alle Daten löschen?')) return;
@@ -1007,19 +1177,44 @@
     function download(content, filename, type) {
       try {
         var blob = new Blob([content], {type: type});
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function() {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        }, 100);
+        
+        // iOS Safari erkennen
+        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        
+        if (isIOS || (isSafari && !window.MSStream)) {
+          // iOS/Safari: In neuem Tab öffnen
+          var reader = new FileReader();
+          reader.onload = function() {
+            var win = window.open('', '_blank');
+            if (win) {
+              win.document.write('<html><head><title>' + filename + '</title></head><body>');
+              win.document.write('<h3>Datei: ' + filename + '</h3>');
+              win.document.write('<p>Bitte den Text unten kopieren oder "Seite speichern" verwenden:</p>');
+              win.document.write('<textarea style="width:100%;height:80vh;font-family:monospace;font-size:12px;">' + content.replace(/</g, '&lt;') + '</textarea>');
+              win.document.write('</body></html>');
+              win.document.close();
+            } else {
+              alert('Pop-up blockiert! Bitte Pop-ups für diese Seite erlauben.');
+            }
+          };
+          reader.readAsText(blob);
+        } else {
+          // Android/Desktop: Normaler Download
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function() {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }, 100);
+        }
       } catch(e) {
-        alert('Download-Fehler: ' + e.message);
+        alert('Download-Fehler: ' + e.message + '\n\nBitte Screenshot machen und melden.');
       }
     }
     // Service Worker registrieren für Offline-Funktionalität
