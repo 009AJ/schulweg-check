@@ -33,6 +33,7 @@
       font-weight: bold;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       width: 100%;
+      position: relative;
     }
     main { 
       padding: 16px; 
@@ -319,10 +320,83 @@
       85% { opacity: 1; transform: translateX(-50%) translateY(0); }
       100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
     }
+    
+    /* Info-Modal */
+    .info-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 2000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .info-overlay.hidden { display: none; }
+    .info-box {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      text-align: center;
+    }
+    .info-box h2 {
+      color: #f59e0b;
+      margin-bottom: 16px;
+    }
+    .info-box h3 {
+      color: #78350f;
+      margin: 20px 0 8px 0;
+      font-size: 14px;
+    }
+    .info-box p {
+      color: #374151;
+      margin: 4px 0;
+      font-size: 15px;
+    }
+    .info-box a {
+      color: #f59e0b;
+      text-decoration: none;
+    }
+    .info-box .version {
+      color: #9ca3af;
+      font-size: 12px;
+      margin-top: 20px;
+    }
+    .info-close {
+      background: #f59e0b;
+      color: white;
+      border: none;
+      padding: 12px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .info-links {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .info-links a {
+      display: block;
+      padding: 8px;
+      color: #f59e0b;
+    }
   </style>
 </head>
 <body>
-  <header>🔍 Schulweg-Detektive</header>
+  <header>
+    <span>🔍 Schulweg-Detektive</span>
+    <button id="btnInfo" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;">ⓘ</button>
+  </header>
   
   <main>
     <!-- Startseite -->
@@ -1212,6 +1286,43 @@
         console.log('Service Worker Fehler:', err);
       });
     }
+    
+    // Info-Modal
+    document.getElementById('btnInfo').onclick = function() {
+      document.getElementById('infoOverlay').classList.remove('hidden');
+    };
+    function closeInfo() {
+      document.getElementById('infoOverlay').classList.add('hidden');
+    }
   </script>
+  
+  <!-- Info-Modal -->
+  <div id="infoOverlay" class="info-overlay hidden">
+    <div class="info-box">
+      <h2>🔍 Schulweg-Detektive</h2>
+      <p>Eine App für sichere Schulwege</p>
+      
+      <h3>ENTWICKELT VON</h3>
+      <p><strong>2Rat Planungsbüro für Radverkehr</strong></p>
+      <p>Armin Jung</p>
+      
+      <h3>IN ZUSAMMENARBEIT MIT</h3>
+      <p><strong>Jugendpflege Kirkel</strong></p>
+      <p>Moritz Gessner</p>
+      
+      <h3>KONTAKT</h3>
+      <p>E-Mail: <a href="mailto:fahr2rat@gmail.com">fahr2rat@gmail.com</a></p>
+      <p>Tel: 0151-29443794</p>
+      <p>Web: <a href="https://2rat.org" target="_blank">2rat.org</a></p>
+      
+      <div class="info-links">
+        <a href="datenschutz.html" target="_blank">📋 Datenschutzerklärung</a>
+      </div>
+      
+      <p class="version">Version 1.0.0</p>
+      
+      <button class="info-close" onclick="closeInfo()">Schließen</button>
+    </div>
+  </div>
 </body>
 </html>

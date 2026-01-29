@@ -1,10 +1,11 @@
-var CACHE_NAME = 'schulweg-detektive-v10';
+var CACHE_NAME = 'schulweg-detektive-v12';
 var urlsToCache = [
   './',
   './index.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './datenschutz.html'
 ];
 
 self.addEventListener('install', function(event) {
