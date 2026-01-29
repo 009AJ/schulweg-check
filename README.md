@@ -38,10 +38,43 @@ Die App speichert automatisch den GPS-Standort. Am Ende zeigen die Kinder einen 
 
 ### Für Lehrer
 - 📷 QR-Code-Scanner zum Sammeln aller Meldungen
-- 🗺️ **Karte mit allen Meldungen** (OpenStreetMap)
+- 🗺️ **Live-Karte mit allen Meldungen** (direkt in der App)
 - 📊 Statistik-Übersicht (inkl. Verkehrsmittel)
 - 📥 Export als GeoJSON (für QGIS) oder CSV (für Excel)
 - 🔐 Passwortgeschützter Bereich
+
+---
+
+## 🗺️ Ergebnisse sichtbar machen
+
+Nach dem Projekttag können die Ergebnisse auf verschiedene Arten veröffentlicht werden:
+
+### Option 1: Karte direkt in der App
+Im Lehrer-Bereich werden alle Meldungen automatisch auf einer OpenStreetMap-Karte angezeigt:
+- 🔴 Rot = Gefahrenstellen
+- 🟢 Grün = Gute Stellen
+- Klick auf Marker zeigt Details
+
+### Option 2: Online-Karte mit uMap (kostenlos)
+1. Im Lehrer-Bereich auf **"Alle Meldungen (GeoJSON)"** klicken
+2. Auf [umap.openstreetmap.fr](https://umap.openstreetmap.fr/de/) gehen
+3. **"Karte erstellen"** klicken
+4. Rechts auf **"Daten importieren"** → GeoJSON-Datei hochladen
+5. Karte speichern und **Link teilen**
+
+→ Die Karte kann auf der Schulwebsite eingebettet oder per Link geteilt werden!
+
+### Option 3: Google My Maps
+1. GeoJSON exportieren
+2. Auf [google.com/mymaps](https://www.google.com/mymaps) neue Karte erstellen
+3. **"Importieren"** → GeoJSON hochladen
+4. Karte freigeben
+
+### Option 4: QGIS (für Profis)
+1. GeoJSON exportieren
+2. In QGIS als Layer laden
+3. Stil anwenden (QML-Datei verfügbar)
+4. Als PDF/Bild exportieren für Präsentationen
 
 ---
 
@@ -98,5 +131,3 @@ Frei nutzbar für Bildungszwecke.
 ---
 
 *Entwickelt von der Jugendpflege Kirkel & 2Rat – Büro für Radverkehrsplanung, 2026*
-
-
