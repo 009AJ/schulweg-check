@@ -1145,17 +1145,17 @@
 
     function exportAllGeoJSON() {
       if (!allReports.length) { alert('Keine Daten'); return; }
-      download(JSON.stringify(createGeoJSON(allReports), null, 2), 'schulweg-alle.geojson', 'text/plain');
+      download(JSON.stringify(createGeoJSON(allReports), null, 2), 'schulweg-alle.geojson', 'application/octet-stream');
     }
     function exportDangerGeoJSON() {
       var d = allReports.filter(function(r) { return r.type === 'danger'; });
       if (!d.length) { alert('Keine Gefahrenstellen'); return; }
-      download(JSON.stringify(createGeoJSON(d), null, 2), 'schulweg-gefahren.geojson', 'text/plain');
+      download(JSON.stringify(createGeoJSON(d), null, 2), 'schulweg-gefahren.geojson', 'application/octet-stream');
     }
     function exportGoodGeoJSON() {
       var d = allReports.filter(function(r) { return r.type === 'good'; });
       if (!d.length) { alert('Keine guten Stellen'); return; }
-      download(JSON.stringify(createGeoJSON(d), null, 2), 'schulweg-gut.geojson', 'text/plain');
+      download(JSON.stringify(createGeoJSON(d), null, 2), 'schulweg-gut.geojson', 'application/octet-stream');
     }
     function exportAllCSV() {
       if (!allReports.length) { alert('Keine Daten'); return; }
@@ -1165,7 +1165,7 @@
     }
     function exportQML() {
       var qml = '<!DOCTYPE qgis PUBLIC "http://mrcc.com/qgis.dtd" "SYSTEM">\n<qgis version="3.28">\n<renderer-v2 type="categorizedSymbol" attr="type">\n<categories>\n<category symbol="0" value="danger" label="Gefahrenstelle"/>\n<category symbol="1" value="good" label="Gute Stelle"/>\n</categories>\n<symbols>\n<symbol type="marker" name="0"><layer class="SimpleMarker"><prop k="color" v="220,38,38,255"/><prop k="size" v="4"/></layer></symbol>\n<symbol type="marker" name="1"><layer class="SimpleMarker"><prop k="color" v="34,197,94,255"/><prop k="size" v="4"/></layer></symbol>\n</symbols>\n</renderer-v2>\n</qgis>';
-      download(qml, 'schulweg-stil.qml', 'text/plain');
+      download(qml, 'schulweg-stil.qml', 'application/octet-stream');
     }
     function deleteAllAdmin() {
       if (!confirm('Alle Daten löschen?')) return;
