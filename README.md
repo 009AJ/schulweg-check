@@ -49,7 +49,6 @@ Die App speichert automatisch den GPS-Standort. Am Ende zeigen die Kinder einen 
 - 🚦 Schwer zu überqueren
 - 👀 Schlecht zu sehen
 - 🌙 Zu dunkel
-- 🚴 Radfahrer gefährlich
 - 🚧 Baustelle
 
 ### Gute Stellen
