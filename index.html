@@ -1135,11 +1135,30 @@
 
     function createGeoJSON(data) {
       return { type: 'FeatureCollection', features: data.map(function(r) {
-        return { type: 'Feature', geometry: { type: 'Point', coordinates: [r.lng, r.lat] },
-          properties: { type: r.type, category: r.category, categoryLabel: r.categoryLabel,
-            childName: r.childName, childClass: r.childClass, 
-            childTransport: r.childTransport || '', childDirection: r.childDirection || '',
-            timestamp: r.timestamp }};
+        var color = r.type === 'danger' ? '#dc2626' : '#22c55e';
+        var icon = r.type === 'danger' ? 'circle' : 'circle';
+        var typeName = r.type === 'danger' ? 'Gefahrenstelle' : 'Gute Stelle';
+        return { 
+          type: 'Feature', 
+          geometry: { type: 'Point', coordinates: [r.lng, r.lat] },
+          properties: { 
+            name: r.categoryLabel,
+            description: '**' + typeName + '**\n\nKategorie: ' + r.categoryLabel + '\nName: ' + r.childName + '\nKlasse: ' + r.childClass + '\nVerkehrsmittel: ' + (r.childTransport || '-') + '\nRichtung: ' + (r.childDirection || '-') + '\nZeit: ' + r.timestamp,
+            type: r.type, 
+            category: r.category, 
+            categoryLabel: r.categoryLabel,
+            childName: r.childName, 
+            childClass: r.childClass, 
+            childTransport: r.childTransport || '', 
+            childDirection: r.childDirection || '',
+            timestamp: r.timestamp,
+            '_umap_options': {
+              color: color,
+              iconClass: 'Drop',
+              showLabel: false
+            }
+          }
+        };
       })};
     }
 
