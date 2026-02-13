@@ -2,7 +2,18 @@
 
 Eine Web-App für Kinder, um Gefahrenstellen und sichere Orte auf ihrem Schulweg zu dokumentieren.
 
-**Ein Projekt der Jugendpflege Kirkel**
+**Ein Gemeinschaftsprojekt von Jugendpflege der Gemeinde Kirkel und 2Rat Planungsbüro für Radverkehr**
+
+---
+
+## ℹ️ Über das Projekt
+
+Dieses Projekt ist:
+- ✅ **Kostenlos** – keine versteckten Kosten
+- ✅ **Werbefrei** – keine Werbung, kein Tracking
+- ✅ **Ohne Gewinnabsicht** – rein gemeinnützig
+
+Die App entstand im Rahmen eines **Schülerpraktikums** bei der Jugendpflege Kirkel – komplett ohne Programmierkenntnisse, **ausschließlich mit Hilfe von KI**.
 
 ---
 
@@ -121,6 +132,23 @@ Im Lehrer-Bereich werden alle Meldungen automatisch auf einer OpenStreetMap-Kart
 - Leaflet.js für Kartenanzeige
 - Offline-fähig nach erstem Laden
 - Keine externen Abhängigkeiten für Kernfunktionen
+- **Entwickelt mit KI-Unterstützung**
+
+---
+
+## 👥 Projektbeteiligte
+
+| Rolle | Person/Organisation |
+|-------|---------------------|
+| **Projektträger** | Jugendpflege der Gemeinde Kirkel |
+| **Technische Umsetzung** | 2Rat Planungsbüro für Radverkehr |
+| **Mitarbeit (Praktikum)** | Moritz Gessner |
+| **Ansprechpartner** | Armin Jung |
+
+### Kontakt
+- 📞 06841-809860
+- 📧 a.jung@kirkel.de
+- 🌐 [2rat.org](https://2rat.org)
 
 ---
 
@@ -130,4 +158,4 @@ Frei nutzbar für Bildungszwecke.
 
 ---
 
-*Entwickelt von der Jugendpflege Kirkel & 2Rat – Büro für Radverkehrsplanung, 2026*
+*Ein Gemeinschaftsprojekt von Jugendpflege der Gemeinde Kirkel & 2Rat Planungsbüro für Radverkehr, 2026*

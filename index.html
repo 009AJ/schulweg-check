@@ -390,9 +390,119 @@
       padding: 8px;
       color: #f59e0b;
     }
+    
+    /* Splash-Screen */
+    .splash-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      z-index: 3000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .splash-overlay.hidden { display: none; }
+    .splash-box {
+      background: white;
+      border-radius: 24px;
+      padding: 32px 24px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    .splash-box h1 {
+      color: #f59e0b;
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+    .splash-box .splash-subtitle {
+      color: #78350f;
+      font-size: 16px;
+      margin-bottom: 24px;
+    }
+    .splash-box .splash-section {
+      background: #fef3c7;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .splash-box .splash-section h3 {
+      color: #92400e;
+      font-size: 12px;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .splash-box .splash-section p {
+      color: #78350f;
+      font-size: 15px;
+      margin: 0;
+      font-weight: 500;
+    }
+    .splash-box .splash-badges {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .splash-box .splash-badge {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .splash-start {
+      background: #f59e0b;
+      color: white;
+      border: none;
+      padding: 16px 40px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+    }
+    .splash-start:active {
+      background: #d97706;
+    }
   </style>
 </head>
 <body>
+  <!-- Splash-Screen -->
+  <div id="splashOverlay" class="splash-overlay">
+    <div class="splash-box">
+      <h1>🔍 Schulweg-Detektive</h1>
+      <p class="splash-subtitle">Eine App für sichere Schulwege</p>
+      
+      <div class="splash-section">
+        <h3>Ein Projekt von</h3>
+        <p>Jugendpflege der Gemeinde Kirkel</p>
+      </div>
+      
+      <div class="splash-section">
+        <h3>Technische Umsetzung</h3>
+        <p>2Rat Planungsbüro für Radverkehr</p>
+      </div>
+      
+      <div class="splash-badges">
+        <span class="splash-badge">✓ Kostenlos</span>
+        <span class="splash-badge">✓ Werbefrei</span>
+        <span class="splash-badge">✓ Keine Gewinnabsicht</span>
+      </div>
+      
+      <button class="splash-start" onclick="closeSplash()">App starten</button>
+    </div>
+  </div>
+
   <header>
     <span>🔍 Schulweg-Detektive</span>
     <button id="btnInfo" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.2);border:none;color:white;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;">ⓘ</button>
@@ -1294,6 +1404,16 @@
     function closeInfo() {
       document.getElementById('infoOverlay').classList.add('hidden');
     }
+    
+    // Splash-Screen
+    function closeSplash() {
+      document.getElementById('splashOverlay').classList.add('hidden');
+      localStorage.setItem('schulwegSplashSeen', 'true');
+    }
+    // Splash nur beim ersten Mal zeigen (oder immer? - erstmal immer)
+    // if (localStorage.getItem('schulwegSplashSeen')) {
+    //   document.getElementById('splashOverlay').classList.add('hidden');
+    // }
   </script>
   
   <!-- Info-Modal -->
@@ -1302,21 +1422,32 @@
       <h2>🔍 Schulweg-Detektive</h2>
       <p>Eine App für sichere Schulwege</p>
       
-      <h3>EIN PROJEKT VON</h3>
-      <p><strong>Jugendpflege Kirkel</strong></p>
-      <p>Moritz Gessner Armin Jung</p>
+      <h3>PROJEKTTRÄGER</h3>
+      <p><strong>Jugendpflege der Gemeinde Kirkel</strong></p>
+      <p>Armin Jung</p>
+      <p>📞 06841-809860</p>
+      <p>📧 <a href="mailto:a.jung@kirkel.de">a.jung@kirkel.de</a></p>
       
       <h3>TECHNISCHE UMSETZUNG</h3>
       <p><strong>2Rat Planungsbüro für Radverkehr</strong></p>
-      <p>Armin Jung</p>
+      <p>📧 <a href="mailto:fahr2rat@gmail.com">fahr2rat@gmail.com</a></p>
+      <p>🌐 <a href="https://2rat.org" target="_blank">2rat.org</a></p>
       
-      <h3>KONTAKT</h3>
-      <p>E-Mail: <a href="/cdn-cgi/l/email-protection#d6b0b7bea4e4a4b7a296b1bbb7bfbaf8b5b9bb"><span class="__cf_email__" data-cfemail="c2a4a3aab0f0b0a3b682a5afa3abaeeca1adaf">[email&#160;protected]</span></a></p>
-      <p>Tel: 0151-29443794</p>
-      <p>Web: <a href="https://2rat.org" target="_blank">2rat.org</a></p>
+      <h3>MITARBEIT IM PRAKTIKUM</h3>
+      <p>Moritz Gessner</p>
+      
+      <h3>HINWEIS</h3>
+      <p style="font-size: 13px; color: #6b7280;">Dieses Projekt ist kostenlos, werbefrei und verfolgt keine kommerziellen Absichten.</p>
+      <p style="font-size: 13px; color: #6b7280; margin-top: 8px;">Diese App entstand im Rahmen eines Schülerpraktikums bei der Jugendpflege Kirkel – komplett ohne Programmierkenntnisse, ausschließlich mit Hilfe von KI.</p>
       
       <div class="info-links">
         <a href="datenschutz.html" target="_blank">📋 Datenschutzerklärung</a>
       </div>
       
-      <p class="version">Ver
+      <p class="version">Version 1.1.0</p>
+      
+      <button class="info-close" onclick="closeInfo()">Schließen</button>
+    </div>
+  </div>
+</body>
+</html>

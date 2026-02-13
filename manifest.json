@@ -1,7 +1,7 @@
 {
   "name": "Schulweg-Detektive",
   "short_name": "Schulweg",
-  "description": "Melde gefährliche und gute Stellen auf deinem Schulweg",
+  "description": "Melde gefährliche und gute Stellen auf deinem Schulweg – Ein Gemeinschaftsprojekt von Jugendpflege Kirkel und 2Rat",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f59e0b",
