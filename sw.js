@@ -1,4 +1,4 @@
-var CACHE_NAME = 'schulweg-detektive-v17';
+var CACHE_NAME = 'schulweg-detektive-v18';
 var urlsToCache = [
   './',
   './index.html',
