@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schulweg-Detektive - Kartenansicht</title>
+  <link rel="stylesheet" href="leaflet.css"/>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; }
+    #header {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    #header h1 { font-size: 22px; }
+    #header .subtitle { font-size: 13px; opacity: 0.9; }
+    #stats {
+      display: flex;
+      gap: 15px;
+      font-size: 13px;
+    }
+    #stats span { background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px; }
+    #map { height: calc(100vh - 110px); width: 100%; }
+    
+    #toolbar {
+      background: #fff;
+      padding: 8px 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      border-bottom: 1px solid #e5e7eb;
+      flex-wrap: wrap;
+    }
+    .tool-btn {
+      padding: 8px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tool-btn:hover { background: #f3f4f6; }
+    .tool-btn.active { border-color: #f59e0b; background: #fef3c7; }
+    .tool-btn input[type="file"] { display: none; }
+    
+    .search-box {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      margin-left: auto;
+    }
+    .search-box input {
+      padding: 8px 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      width: 200px;
+    }
+    .search-box input:focus { outline: none; border-color: #f59e0b; }
+    
+    .drop-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(245, 158, 11, 0.95);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      color: white;
+    }
+    .drop-overlay h2 { font-size: 32px; margin-bottom: 10px; }
+    .drop-overlay p { font-size: 18px; opacity: 0.9; }
+    .drop-overlay.hidden { display: none; }
+    
+    .start-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9998;
+    }
+    .start-overlay.hidden { display: none; }
+    .start-box {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      text-align: center;
+      max-width: 500px;
+      margin: 20px;
+    }
+    .start-box h2 { color: #b45309; margin-bottom: 20px; }
+    .start-box p { color: #666; margin-bottom: 20px; line-height: 1.6; }
+    .start-box .file-label {
+      display: inline-block;
+      background: #f59e0b;
+      color: white;
+      padding: 15px 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .start-box .file-label:hover { background: #d97706; }
+    .start-box .hint { margin-top: 20px; font-size: 12px; color: #999; }
+    
+    .legend {
+      position: fixed;
+      bottom: 30px;
+      left: 10px;
+      background: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      font-size: 14px;
+      z-index: 1000;
+    }
+    .legend-item { display: flex; align-items: center; gap: 8px; margin: 5px 0; }
+    .legend-dot { width: 16px; height: 16px; border-radius: 50%; }
+    .legend-dot.danger { background: #dc2626; }
+    .legend-dot.good { background: #22c55e; }
+    .legend-dot.school { background: #3b82f6; }
+    .legend-dot.custom { background: #8b5cf6; }
+
+    .leaflet-popup-content { min-width: 200px; }
+    .popup-title { font-size: 16px; font-weight: bold; margin-bottom: 8px; color: #333; }
+    .popup-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #eee; }
+    .popup-row:last-child { border-bottom: none; }
+    .popup-label { color: #666; }
+    .popup-value { font-weight: 500; }
+    .popup-type-danger { color: #dc2626; }
+    .popup-type-good { color: #22c55e; }
+    .popup-delete { 
+      margin-top: 10px; 
+      color: #dc2626; 
+      cursor: pointer; 
+      font-size: 12px;
+      text-decoration: underline;
+    }
+    
+    /* Modal für manuelles Hinzufügen */
+    .modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+    .modal.hidden { display: none; }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 400px;
+      width: 90%;
+    }
+    .modal-content h3 { color: #b45309; margin-bottom: 20px; }
+    .modal-content label { display: block; margin-bottom: 5px; font-weight: bold; color: #374151; }
+    .modal-content input, .modal-content select, .modal-content textarea {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    .modal-content textarea { height: 80px; resize: vertical; }
+    .modal-buttons { display: flex; gap: 10px; margin-top: 10px; }
+    .modal-buttons button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn-cancel { background: #e5e7eb; color: #374151; }
+    .btn-save { background: #f59e0b; color: white; }
+    .btn-save:hover { background: #d97706; }
+    
+    .mode-hint {
+      position: fixed;
+      top: 120px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #3b82f6;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      z-index: 1000;
+      font-weight: bold;
+    }
+    .mode-hint.hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <div>
+      <h1>🔍 Schulweg-Detektive</h1>
+      <div class="subtitle">Kartenansicht der Meldungen</div>
+    </div>
+    <div id="stats">
+      <span>📍 Gesamt: <strong id="statTotal">0</strong></span>
+      <span>🔴 Gefahren: <strong id="statDanger">0</strong></span>
+      <span>🟢 Gut: <strong id="statGood">0</strong></span>
+    </div>
+  </div>
+  
+  <div id="toolbar">
+    <label class="tool-btn">
+      📂 GeoJSON laden
+      <input type="file" id="fileInput" accept=".geojson,.json" multiple>
+    </label>
+    <button class="tool-btn" id="btnAddPoint">📍 Punkt hinzufügen</button>
+    <button class="tool-btn" id="btnAddSchool">🏫 Schule markieren</button>
+    <button class="tool-btn" id="btnExport">💾 Exportieren</button>
+    <button class="tool-btn" id="btnClear">🗑️ Alle löschen</button>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Ort suchen..." >
+      <button class="tool-btn" id="btnSearch">🔍</button>
+    </div>
+  </div>
+  
+  <div id="map"></div>
+  
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot danger"></div> Gefahrenstelle</div>
+    <div class="legend-item"><div class="legend-dot good"></div> Gute Stelle</div>
+    <div class="legend-item"><div class="legend-dot school"></div> Schule</div>
+    <div class="legend-item"><div class="legend-dot custom"></div> Eigener Punkt</div>
+  </div>
+  
+  <div id="modeHint" class="mode-hint hidden">Klicke auf die Karte um einen Punkt zu setzen</div>
+  
+  <div id="dropOverlay" class="drop-overlay hidden">
+    <h2>📂 Datei hier ablegen</h2>
+    <p>GeoJSON-Datei loslassen zum Importieren</p>
+  </div>
+  
+  <!-- Start-Overlay entfernt – Karte ist sofort nutzbar -->
+  
+  <!-- Modal für Punkt hinzufügen -->
+  <div id="addModal" class="modal hidden">
+    <div class="modal-content">
+      <h3 id="modalTitle">📍 Punkt hinzufügen</h3>
+      <label>Typ:</label>
+      <select id="pointType">
+        <option value="danger">🔴 Gefahrenstelle</option>
+        <option value="good">🟢 Gute Stelle</option>
+        <option value="school">🏫 Schule</option>
+        <option value="custom">📍 Eigener Punkt</option>
+      </select>
+      <label>Bezeichnung:</label>
+      <input type="text" id="pointName" placeholder="z.B. Gefährliche Kreuzung">
+      <label>Beschreibung (optional):</label>
+      <textarea id="pointDesc" placeholder="Weitere Details..."></textarea>
+      <div class="modal-buttons">
+        <button class="btn-cancel" id="btnCancelAdd">Abbrechen</button>
+        <button class="btn-save" id="btnSavePoint">Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="leaflet.js"></script>
+  <script>
+    // Karte initialisieren
+    var map = L.map('map').setView([49.3, 7.3], 13);
+    
+    L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19
+    }).addTo(map);
+    
+    var allPoints = []; // Alle Punkte speichern
+    var markersLayer = L.layerGroup().addTo(map);
+    var addMode = null; // null, 'point', 'school'
+    var pendingLatLng = null;
+    
+    // Farben für verschiedene Typen
+    var typeColors = {
+      danger: '#dc2626',
+      good: '#22c55e',
+      school: '#3b82f6',
+      custom: '#8b5cf6'
+    };
+    
+    var typeNames = {
+      danger: 'Gefahrenstelle',
+      good: 'Gute Stelle',
+      school: 'Schule',
+      custom: 'Eigener Punkt'
+    };
+    
+    // Datei-Handling
+    document.getElementById('fileInput').addEventListener('change', handleFiles);
+    
+    function handleFiles(e) {
+      var files = e.target.files;
+      for (var i = 0; i < files.length; i++) {
+        loadFile(files[i]);
+      }
+    }
+    
+    // Drag & Drop
+    document.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      document.getElementById('dropOverlay').classList.remove('hidden');
+    });
+    
+    document.addEventListener('dragleave', function(e) {
+      if (e.relatedTarget === null) {
+        document.getElementById('dropOverlay').classList.add('hidden');
+      }
+    });
+    
+    document.addEventListener('drop', function(e) {
+      e.preventDefault();
+      document.getElementById('dropOverlay').classList.add('hidden');
+      var files = e.dataTransfer.files;
+      for (var i = 0; i < files.length; i++) {
+        loadFile(files[i]);
+      }
+    });
+    
+    function loadFile(file) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var data = JSON.parse(e.target.result);
+          importGeoJSON(data);
+        } catch(err) {
+          alert('Fehler beim Laden: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+    
+    function importGeoJSON(geojson) {
+      geojson.features.forEach(function(feature) {
+        var props = feature.properties;
+        var coords = feature.geometry.coordinates;
+        
+        var point = {
+          id: Date.now() + Math.random(),
+          lat: coords[1],
+          lng: coords[0],
+          type: props.type || 'custom',
+          name: props.categoryLabel || props.name || props.category || 'Meldung',
+          description: props.description || '',
+          childName: props.childName || '',
+          childClass: props.childClass || '',
+          childTransport: props.childTransport || '',
+          childDirection: props.childDirection || '',
+          timestamp: props.timestamp || ''
+        };
+        
+        // Duplikate vermeiden
+        var isDuplicate = allPoints.some(function(p) {
+          return p.lat === point.lat && p.lng === point.lng && p.timestamp === point.timestamp;
+        });
+        
+        if (!isDuplicate) {
+          allPoints.push(point);
+        }
+      });
+      
+      renderAllPoints();
+    }
+    
+    function renderAllPoints() {
+      markersLayer.clearLayers();
+      var bounds = [];
+      
+      allPoints.forEach(function(point) {
+        var color = typeColors[point.type] || typeColors.custom;
+        
+        var marker = L.circleMarker([point.lat, point.lng], {
+          radius: point.type === 'school' ? 15 : 12,
+          fillColor: color,
+          color: '#fff',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.9
+        });
+        
+        marker.bindPopup(createPopup(point));
+        marker.pointId = point.id;
+        markersLayer.addLayer(marker);
+        bounds.push([point.lat, point.lng]);
+      });
+      
+      updateStats();
+      
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, { padding: [50, 50] });
+      }
+    }
+    
+    function createPopup(point) {
+      var typeName = typeNames[point.type] || 'Punkt';
+      var typeClass = point.type === 'danger' ? 'popup-type-danger' : (point.type === 'good' ? 'popup-type-good' : '');
+      
+      var html = '<div class="popup-title ' + typeClass + '">' + point.name + '</div>';
+      html += '<div class="popup-row"><span class="popup-label">Typ:</span><span class="popup-value ' + typeClass + '">' + typeName + '</span></div>';
+      
+      if (point.childName) {
+        html += '<div class="popup-row"><span class="popup-label">Name:</span><span class="popup-value">' + point.childName + '</span></div>';
+      }
+      if (point.childClass) {
+        html += '<div class="popup-row"><span class="popup-label">Klasse:</span><span class="popup-value">' + point.childClass + '</span></div>';
+      }
+      if (point.childTransport) {
+        html += '<div class="popup-row"><span class="popup-label">Verkehrsmittel:</span><span class="popup-value">' + point.childTransport + '</span></div>';
+      }
+      if (point.childDirection) {
+        html += '<div class="popup-row"><span class="popup-label">Richtung:</span><span class="popup-value">' + point.childDirection + '</span></div>';
+      }
+      if (point.description) {
+        html += '<div class="popup-row"><span class="popup-label">Info:</span><span class="popup-value">' + point.description + '</span></div>';
+      }
+      if (point.timestamp) {
+        var time = point.timestamp.replace('T', ' ').substring(0, 16);
+        html += '<div class="popup-row"><span class="popup-label">Zeit:</span><span class="popup-value">' + time + '</span></div>';
+      }
+      
+      html += '<div class="popup-delete" onclick="deletePoint(\'' + point.id + '\')">🗑️ Punkt löschen</div>';
+      
+      return html;
+    }
+    
+    function deletePoint(id) {
+      if (confirm('Punkt wirklich löschen?')) {
+        allPoints = allPoints.filter(function(p) { return p.id != id; });
+        renderAllPoints();
+      }
+    }
+    
+    function updateStats() {
+      var total = allPoints.length;
+      var danger = allPoints.filter(function(p) { return p.type === 'danger'; }).length;
+      var good = allPoints.filter(function(p) { return p.type === 'good'; }).length;
+      
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statDanger').textContent = danger;
+      document.getElementById('statGood').textContent = good;
+    }
+    
+    // Punkt hinzufügen
+    document.getElementById('btnAddPoint').addEventListener('click', function() {
+      addMode = 'point';
+      document.getElementById('modeHint').classList.remove('hidden');
+      this.classList.add('active');
+    });
+    
+    document.getElementById('btnAddSchool').addEventListener('click', function() {
+      addMode = 'school';
+      document.getElementById('modeHint').textContent = 'Klicke auf die Karte um die Schule zu markieren';
+      document.getElementById('modeHint').classList.remove('hidden');
+      this.classList.add('active');
+    });
+    
+    map.on('click', function(e) {
+      if (!addMode) return;
+      
+      pendingLatLng = e.latlng;
+      
+      if (addMode === 'school') {
+        document.getElementById('pointType').value = 'school';
+        document.getElementById('pointName').value = 'Schule';
+        document.getElementById('modalTitle').textContent = '🏫 Schule markieren';
+      } else {
+        document.getElementById('pointType').value = 'danger';
+        document.getElementById('pointName').value = '';
+        document.getElementById('modalTitle').textContent = '📍 Punkt hinzufügen';
+      }
+      document.getElementById('pointDesc').value = '';
+      document.getElementById('addModal').classList.remove('hidden');
+    });
+    
+    document.getElementById('btnCancelAdd').addEventListener('click', function() {
+      document.getElementById('addModal').classList.add('hidden');
+      cancelAddMode();
+    });
+    
+    document.getElementById('btnSavePoint').addEventListener('click', function() {
+      var point = {
+        id: Date.now() + Math.random(),
+        lat: pendingLatLng.lat,
+        lng: pendingLatLng.lng,
+        type: document.getElementById('pointType').value,
+        name: document.getElementById('pointName').value || typeNames[document.getElementById('pointType').value],
+        description: document.getElementById('pointDesc').value,
+        timestamp: new Date().toISOString().substring(0, 19)
+      };
+      
+      allPoints.push(point);
+      renderAllPoints();
+      
+      document.getElementById('addModal').classList.add('hidden');
+      cancelAddMode();
+    });
+    
+    function cancelAddMode() {
+      addMode = null;
+      document.getElementById('modeHint').classList.add('hidden');
+      document.getElementById('modeHint').textContent = 'Klicke auf die Karte um einen Punkt zu setzen';
+      document.querySelectorAll('.tool-btn').forEach(function(btn) {
+        btn.classList.remove('active');
+      });
+    }
+    
+    // ESC zum Abbrechen
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        cancelAddMode();
+        document.getElementById('addModal').classList.add('hidden');
+      }
+    });
+    
+    // Exportieren
+    document.getElementById('btnExport').addEventListener('click', function() {
+      if (allPoints.length === 0) {
+        alert('Keine Punkte zum Exportieren');
+        return;
+      }
+      
+      var geojson = {
+        type: 'FeatureCollection',
+        features: allPoints.map(function(p) {
+          return {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+            properties: {
+              type: p.type,
+              name: p.name,
+              categoryLabel: p.name,
+              description: p.description || '',
+              childName: p.childName || '',
+              childClass: p.childClass || '',
+              childTransport: p.childTransport || '',
+              childDirection: p.childDirection || '',
+              timestamp: p.timestamp || ''
+            }
+          };
+        })
+      };
+      
+      var blob = new Blob([JSON.stringify(geojson, null, 2)], {type: 'application/octet-stream'});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'schulweg-komplett.geojson';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+    
+    // Alle löschen
+    document.getElementById('btnClear').addEventListener('click', function() {
+      if (allPoints.length === 0) return;
+      if (confirm('Wirklich ALLE Punkte löschen?')) {
+        allPoints = [];
+        renderAllPoints();
+      }
+    });
+    
+    // Ort-Suche via Nominatim (OpenStreetMap)
+    function searchLocation() {
+      var query = document.getElementById('searchInput').value.trim();
+      if (!query) return;
+      document.getElementById('btnSearch').textContent = '⏳';
+      fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query) + '&limit=1&countrycodes=de')
+        .then(function(r) { return r.json(); })
+        .then(function(results) {
+          document.getElementById('btnSearch').textContent = '🔍';
+          if (results.length > 0) {
+            var r = results[0];
+            map.setView([parseFloat(r.lat), parseFloat(r.lon)], 15);
+          } else {
+            alert('Ort nicht gefunden');
+          }
+        })
+        .catch(function() {
+          document.getElementById('btnSearch').textContent = '🔍';
+          alert('Suche fehlgeschlagen');
+        });
+    }
+    
+    document.getElementById('btnSearch').addEventListener('click', searchLocation);
+    document.getElementById('searchInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') searchLocation();
+    });
+  </script>
+</body>
+</html>

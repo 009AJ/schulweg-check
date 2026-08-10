@@ -9,7 +9,6 @@
   <meta name="theme-color" content="#f59e0b">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <title>Schulweg-Detektive</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-text-size-adjust: 100%; }
@@ -283,6 +282,56 @@
       border-radius: 16px;
       overflow: hidden;
       margin-bottom: 16px;
+    }
+    /* Karte im Lehrerbereich - waechst auf grossen Schirmen mit */
+    #map {
+      height: 350px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    @media (min-width: 900px) {
+      body.admin-wide main {
+        max-width: 1200px;
+      }
+      #map {
+        height: 60vh;
+        min-height: 480px;
+      }
+    }
+    /* Geteilte Scan-Ansicht: Kamera + Live-Karte */
+    .scan-split {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .scan-split .scanner-container {
+      margin-bottom: 0;
+      flex: 0 0 auto;
+    }
+    #scanMap {
+      height: 300px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #e8e6e1;
+      border: 2px solid #e2e8f0;
+    }
+    /* Auf breiten Schirmen (Laptop/Beamer) nebeneinander */
+    @media (min-width: 900px) {
+      body.scanning-wide main {
+        max-width: 1200px;
+      }
+      .scan-split {
+        flex-direction: row;
+        align-items: stretch;
+      }
+      .scan-split .scanner-container {
+        flex: 0 0 34%;
+      }
+      #scanMap {
+        flex: 1 1 auto;
+        height: auto;
+        min-height: 460px;
+      }
     }
     .scanner-container video {
       width: 100%;
@@ -648,6 +697,12 @@
       </div>
 
       <div class="admin-section">
+        <h3>🗺️ Karte</h3>
+        <div id="map"></div>
+        <p style="font-size: 12px; color: #6b7280;">Rot = Gefahrenstellen, Grün = Gute Stellen</p>
+      </div>
+
+      <div class="admin-section">
         <h3>📊 Statistik</h3>
         <div class="stats-box">
           <div class="stats-row"><span>Gesamte Meldungen:</span><strong id="statTotal">0</strong></div>
@@ -657,12 +712,6 @@
         </div>
         <div id="transportStats"></div>
         <div id="categoryStats"></div>
-      </div>
-
-      <div class="admin-section">
-        <h3>🗺️ Karte</h3>
-        <div id="map" style="height: 350px; border-radius: 12px; margin-bottom: 12px;"></div>
-        <p style="font-size: 12px; color: #6b7280;">Rot = Gefahrenstellen, Grün = Gute Stellen</p>
       </div>
 
       <div class="admin-section">
@@ -684,15 +733,18 @@
     <div id="scanView" class="hidden">
       <button class="back-btn" id="backFromScan">← Zurück</button>
       <div class="scan-status scan-waiting" id="scanStatus">📷 QR-Code vor die Kamera halten</div>
-      <div class="scanner-container">
-        <video id="scanVideo" playsinline></video>
+      <div class="scan-split">
+        <div class="scanner-container">
+          <video id="scanVideo" playsinline></video>
+        </div>
+        <div id="scanMap"></div>
       </div>
       <canvas id="scanCanvas" style="display:none;"></canvas>
       <div id="scannedList"></div>
     </div>
   </main>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet wird erst beim Öffnen des Lehrerbereichs geladen (siehe ensureLeaflet) -->
   <!-- QR-Code-Erzeugung lokal (kein externer Dienst) -->
   <!-- qrcode-generator v2.0.4 - Kazuhiko Arase - MIT-Lizenz - https://github.com/kazuhikoarase/qrcode-generator -->
   <script>
@@ -810,6 +862,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     }
 
     function hideAllViews() {
+      document.body.classList.remove('admin-wide', 'scanning-wide');
       document.getElementById('homeView').classList.add('hidden');
       document.getElementById('dangerView').classList.add('hidden');
       document.getElementById('goodView').classList.add('hidden');
@@ -900,8 +953,45 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
     function showAdmin() {
       hideAllViews();
       document.getElementById('adminView').classList.remove('hidden');
+      document.body.classList.add('admin-wide');
       updateStats();
-      initMap();
+      ensureLeaflet(initMap);
+    }
+
+    // Leaflet erst bei Bedarf laden - Kindergeraete laden die Bibliothek nie
+    function ensureLeaflet(callback) {
+      if (typeof L !== 'undefined') {
+        callback();
+        return;
+      }
+      var css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'leaflet.css';
+      document.head.appendChild(css);
+
+      var script = document.createElement('script');
+      script.src = 'leaflet.js';
+      script.onload = function() {
+        callback();
+      };
+      script.onerror = function() {
+        alert('Karte konnte nicht geladen werden. Bitte Seite neu laden.');
+      };
+      document.head.appendChild(script);
+    }
+
+    // Erzeugt einen Marker fuer eine Meldung - von beiden Karten genutzt
+    function createReportMarker(r) {
+      var color = r.type === 'danger' ? '#dc2626' : '#22c55e';
+      var icon = L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="background:' + color + ';width:24px;height:24px;border-radius:50%;border:3px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+      var marker = L.marker([r.lat, r.lng], {icon: icon});
+      marker.bindPopup('<strong>' + r.categoryLabel + '</strong><br>' + r.childName + ' (' + r.childClass + ')');
+      return marker;
     }
 
     function initMap() {
@@ -912,8 +1002,8 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // Karte initialisieren
       map = L.map('map').setView([49.35, 7.2], 13); // Kirkel-Bereich
       
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
+      L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap-Mitwirkende'
       }).addTo(map);
       
       if (allReports.length === 0) {
@@ -923,16 +1013,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // Marker hinzufügen
       var bounds = [];
       allReports.forEach(function(r) {
-        var color = r.type === 'danger' ? '#dc2626' : '#22c55e';
-        var icon = L.divIcon({
-          className: 'custom-marker',
-          html: '<div style="background:' + color + ';width:24px;height:24px;border-radius:50%;border:3px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>',
-          iconSize: [24, 24],
-          iconAnchor: [12, 12]
-        });
-        
-        var marker = L.marker([r.lat, r.lng], {icon: icon}).addTo(map);
-        marker.bindPopup('<strong>' + r.categoryLabel + '</strong><br>' + r.childName + ' (' + r.childClass + ')');
+        createReportMarker(r).addTo(map);
         bounds.push([r.lat, r.lng]);
       });
       
@@ -1091,7 +1172,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       // jsQR Bibliothek laden falls noch nicht vorhanden
       if (typeof jsQR === 'undefined') {
         var script = document.createElement('script');
-        script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+        script.src = 'jsQR.min.js';
         script.onload = function() {
           startScanReal();
         };
@@ -1109,8 +1190,18 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       document.getElementById('scanView').classList.remove('hidden');
       document.getElementById('scanStatus').textContent = '📷 QR-Code vor die Kamera halten';
       document.getElementById('scanStatus').className = 'scan-status scan-waiting';
+
+      // Breite Darstellung fuer Laptop/Beamer
+      document.body.classList.add('scanning-wide');
+
+      // Live-Karte aufbauen - Leaflet notfalls nachladen
+      ensureLeaflet(initScanMap);
       
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      // Rueckkamera bevorzugen (Handy), sonst irgendeine Kamera (Laptop-Webcam)
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } })
+      .catch(function() {
+        return navigator.mediaDevices.getUserMedia({ video: true });
+      })
       .then(function(stream) {
         videoStream = stream;
         var video = document.getElementById('scanVideo');
@@ -1220,6 +1311,7 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       }
       
       updateScannedList();
+      refreshScanMap();
       
       setTimeout(function() {
         if (scanning) {
@@ -1276,12 +1368,56 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       document.getElementById('scannedList').innerHTML = html + '</div>';
     }
 
+    // ---- Live-Karte in der Scan-Ansicht ----
+    var scanMap = null;
+    var scanMapMarkers = {}; // timestamp+name -> true, verhindert Doppelmarker
+
+    function initScanMap() {
+      if (scanMap) {
+        scanMap.remove();
+        scanMap = null;
+      }
+      scanMapMarkers = {};
+
+      scanMap = L.map('scanMap').setView([49.35, 7.2], 13);
+      L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap-Mitwirkende'
+      }).addTo(scanMap);
+
+      // Bereits gesammelte Meldungen direkt anzeigen
+      refreshScanMap();
+
+      // Leaflet braucht das, wenn der Container beim Aufbau versteckt war
+      setTimeout(function() { if (scanMap) scanMap.invalidateSize(); }, 200);
+    }
+
+    // Ergaenzt neue Meldungen live, ohne die Karte neu aufzubauen
+    function refreshScanMap() {
+      if (!scanMap) return;
+      var bounds = [];
+      allReports.forEach(function(r) {
+        var key = r.timestamp + '_' + r.childName;
+        bounds.push([r.lat, r.lng]);
+        if (scanMapMarkers[key]) return;
+        createReportMarker(r).addTo(scanMap);
+        scanMapMarkers[key] = true;
+      });
+      if (bounds.length > 0) {
+        scanMap.fitBounds(bounds, {padding: [30, 30], maxZoom: 17});
+      }
+    }
+
     function stopScanAndGoBack() {
       scanning = false;
       if (videoStream) {
         videoStream.getTracks().forEach(function(track) { track.stop(); });
         videoStream = null;
       }
+      if (scanMap) {
+        scanMap.remove();
+        scanMap = null;
+      }
+      document.body.classList.remove('scanning-wide');
       showAdmin();
     }
 
