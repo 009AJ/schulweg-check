@@ -1525,15 +1525,61 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
       document.getElementById('scannedList').innerHTML = '';
     }
     function download(content, filename, type) {
-      var blob = new Blob([content], {type: type});
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Android: Blob-Downloads scheitern im Play-Store-Wrapper (TWA).
+      // Deshalb dort das Teilen-Menue nutzen - Datei kann in Drive,
+      // Dateien-App oder direkt in eine E-Mail gelegt werden.
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      if (isAndroid && typeof File !== 'undefined' && navigator.canShare) {
+        try {
+          var file = new File([content], filename, {type: type});
+          if (navigator.canShare({files: [file]})) {
+            navigator.share({files: [file], title: filename})
+              .catch(function(err) {
+                // Nutzer hat selbst abgebrochen - nichts weiter tun
+                if (err && err.name === 'AbortError') return;
+                downloadClassic(content, filename, type);
+              });
+            return;
+          }
+        } catch (e) {
+          // faellt unten auf den klassischen Weg durch
+        }
+      }
+      downloadClassic(content, filename, type);
+    }
+
+    function downloadClassic(content, filename, type) {
+      try {
+        var blob = new Blob([content], {type: type});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        // Erst spaeter freigeben - sonst bricht der Download in manchen Browsern ab
+        setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+      } catch (e) {
+        downloadFallback(content, filename);
+      }
+    }
+
+    function downloadFallback(content, filename) {
+      // Letzte Rettung: Inhalt in die Zwischenablage, damit nichts verloren geht
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(content).then(function() {
+          alert('Die Datei "' + filename + '" konnte nicht gespeichert werden.\n\n' +
+                'Der Inhalt liegt jetzt in der Zwischenablage. Fuege ihn in eine ' +
+                'Notiz oder E-Mail ein und schicke ihn an dich selbst.');
+        }).catch(function() {
+          alert('Export auf diesem Geraet nicht moeglich.\n\n' +
+                'Bitte den Lehrerbereich am Rechner oeffnen: 009aj.github.io/schulweg-check');
+        });
+      } else {
+        alert('Export auf diesem Geraet nicht moeglich.\n\n' +
+              'Bitte den Lehrerbereich am Rechner oeffnen: 009aj.github.io/schulweg-check');
+      }
     }
     // Service Worker registrieren für Offline-Funktionalität
     if ('serviceWorker' in navigator) {
